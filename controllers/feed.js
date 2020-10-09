@@ -12,6 +12,7 @@ exports.getBlogs = (req, res, next) => {
         throw error;
       }
       res.status(200).json({
+        message: "found these blogs",
         blogs: { ...blogs },
       });
     })
@@ -27,7 +28,6 @@ exports.createBlog = (req, res, next) => {
   const content = req.body.content;
   const imageUrl = req.file.path.replace("\\", "/");
 
-  console.log("here");
   console.log(req.file);
 
   const blog = new Blog({
@@ -70,7 +70,8 @@ exports.editBlog = (req, res, next) => {
   const blogId = req.params.blogId;
   const title = req.body.title;
   const content = req.body.content;
-  const imageUrl = req.body.imageUrl;
+  let imageUrl = req.file.path.replace("\\", "/");
+
   Blog.findById(blogId)
     .then((blog) => {
       if (!blog) {
@@ -78,6 +79,10 @@ exports.editBlog = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+      if (!imageUrl) {
+        imageUrl = blog.imageUrl;
+      }
+      clearImage(blog.imageUrl);
       blog.title = title;
       blog.content = content;
       blog.imageUrl = imageUrl;
