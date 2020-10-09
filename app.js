@@ -1,13 +1,52 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-
 const mongoose = require("mongoose");
+const multer = require("multer");
+const path = require("path");
 
 const feedRoutes = require("./routes/feed");
 
 const app = express();
 
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "PUT, POST, DELETE, GET, OPTIONS, PATCH"
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
+
 app.use(bodyParser.json());
+
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    console.log(file.originalname);
+    cb(null, file.originalname);
+  },
+});
+// console.log(file.originalname);
+const filefilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg" ||
+    file.mimetype === "image/png"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+
+app.use(
+  multer({ fileFilter: filefilter, storage: fileStorage }).single("image")
+);
+
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use("/feed", feedRoutes);
 app.use((error, req, res, next) => {

@@ -23,7 +23,10 @@ exports.getBlogs = (req, res, next) => {
 exports.createBlog = (req, res, next) => {
   const title = req.body.title;
   const content = req.body.content;
-  const imageUrl = req.body.imageUrl;
+  const imageUrl = req.file.path;
+
+  console.log("here");
+  console.log(req.file);
 
   const blog = new Blog({
     title: title,
