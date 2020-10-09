@@ -1,6 +1,8 @@
 const { title } = require("process");
 const Blog = require("../models/blog");
 
+const clearImage = require("../util/clearFile");
+
 exports.getBlogs = (req, res, next) => {
   Blog.find()
     .then((blogs) => {
@@ -10,7 +12,7 @@ exports.getBlogs = (req, res, next) => {
         throw error;
       }
       res.status(200).json({
-        blogs: [...blogs],
+        blogs: { ...blogs },
       });
     })
     .catch((err) => {
@@ -23,7 +25,7 @@ exports.getBlogs = (req, res, next) => {
 exports.createBlog = (req, res, next) => {
   const title = req.body.title;
   const content = req.body.content;
-  const imageUrl = req.file.path;
+  const imageUrl = req.file.path.replace("\\", "/");
 
   console.log("here");
   console.log(req.file);
@@ -97,7 +99,13 @@ exports.editBlog = (req, res, next) => {
 
 exports.deleteBlog = (req, res, next) => {
   const blogId = req.params.blogId;
-  Blog.findByIdAndRemove(blogId)
+  Blog.findById(blogId)
+    .then((blog) => {
+      return clearImage(blog.imageUrl);
+    })
+    .then((result) => {
+      return Blog.findByIdAndRemove(blogId);
+    })
     .then((result) => {
       res.status(200).json({ messagel: "Blog deleted successfully" });
     })

@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path");
+const { v4: uuidv4 } = require("uuid");
 
 const feedRoutes = require("./routes/feed");
 
@@ -26,7 +27,7 @@ const fileStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     console.log(file.originalname);
-    cb(null, file.originalname);
+    cb(null, uuidv4() + "-" + file.originalname);
   },
 });
 // console.log(file.originalname);
