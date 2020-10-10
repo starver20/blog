@@ -3,11 +3,13 @@ const { body } = require("express-validator/check");
 const router = express.Router();
 
 const feedController = require("../controllers/feed");
+const isAuth = require("../util/isAuth");
 
-router.get("/blogs", feedController.getBlogs);
+router.get("/blogs", isAuth, feedController.getBlogs);
 
 router.post(
   "/blog",
+  isAuth,
   [
     body("title").trim().isLength({ min: 5 }),
     body("content").trim().isLength({ min: 5 }),
@@ -15,10 +17,11 @@ router.post(
   feedController.createBlog
 );
 
-router.get("/blog/:blogId", feedController.getBlog);
+router.get("/blog/:blogId", isAuth, feedController.getBlog);
 
 router.put(
   "/blog/:blogId",
+  isAuth,
   [
     body("title").trim().isLength({ min: 5 }),
     body("content").trim().isLength({ min: 5 }),
@@ -26,6 +29,6 @@ router.put(
   feedController.editBlog
 );
 
-router.delete("/blog/:blogId", feedController.deleteBlog);
+router.delete("/blog/:blogId", isAuth, feedController.deleteBlog);
 
 module.exports = router;
