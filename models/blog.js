@@ -14,6 +14,11 @@ const blogSchema = new Schema({
   imageUrl: {
     type: String,
   },
+  author: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("Blog", blogSchema);

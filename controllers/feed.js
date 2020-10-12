@@ -1,5 +1,8 @@
 const { title } = require("process");
 const Blog = require("../models/blog");
+const User = require("../models/user");
+
+const { validationResult } = require("express-validator/check");
 
 const clearImage = require("../util/clearFile");
 
@@ -24,9 +27,18 @@ exports.getBlogs = (req, res, next) => {
     });
 };
 exports.createBlog = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error("vaidation failed");
+    error.statusCode = 422;
+    error.data = errors.array();
+    throw error;
+  }
+
   const title = req.body.title;
   const content = req.body.content;
   const imageUrl = req.file.path.replace("\\", "/");
+  let creator;
 
   console.log(req.file);
 
@@ -34,13 +46,31 @@ exports.createBlog = (req, res, next) => {
     title: title,
     content: content,
     imageUrl: imageUrl,
+    author: req.userId,
   });
-  blog.save().then((result) => {
-    res.status(201).json({
-      message: "blog created",
-      blog: blog,
+  blog
+    .save()
+    .then((result) => {
+      return User.findById(req.userId);
+    })
+    .then((user) => {
+      user.blogs.push(blog);
+      creator = user;
+      return user.save();
+    })
+    .then((result) => {
+      res.status(201).json({
+        message: "blog created",
+        blog: blog,
+        author: creator.name,
+      });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
-  });
 };
 
 exports.getBlog = (req, res, next) => {
@@ -79,6 +109,11 @@ exports.editBlog = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+      if (!req.userId.toString() === blog.author.toString()) {
+        const error = new Error("Not authorized!");
+        error.statusCode = 403;
+        throw error;
+      }
       if (!imageUrl) {
         imageUrl = blog.imageUrl;
       }
@@ -106,10 +141,22 @@ exports.deleteBlog = (req, res, next) => {
   const blogId = req.params.blogId;
   Blog.findById(blogId)
     .then((blog) => {
+      if (!req.userId.toString() === blog.author.toString()) {
+        const error = new Error("Not authorized!");
+        error.statusCode = 403;
+        throw error;
+      }
       return clearImage(blog.imageUrl);
     })
     .then((result) => {
       return Blog.findByIdAndRemove(blogId);
+    })
+    .then((result) => {
+      return User.findById(req.userId);
+    })
+    .then((user) => {
+      user.blogs.pull(blogId);
+      return user.save();
     })
     .then((result) => {
       res.status(200).json({ messagel: "Blog deleted successfully" });
